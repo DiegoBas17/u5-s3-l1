@@ -5,7 +5,7 @@ import diegobasili.gestioneViaggiAziendali.payloads.DipendenteDTO;
 import diegobasili.gestioneViaggiAziendali.payloads.DipendenteLoginDTO;
 import diegobasili.gestioneViaggiAziendali.payloads.DipendenteLoginRespDTO;
 import diegobasili.gestioneViaggiAziendali.payloads.DipendenteRespDTO;
-import diegobasili.gestioneViaggiAziendali.services.AuthorizationsService;
+import diegobasili.gestioneViaggiAziendali.services.AuthenticationsService;
 import diegobasili.gestioneViaggiAziendali.services.DipendentiService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,15 +17,15 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("authorizations")
-public class AuthorizationsController {
+public class AuthenticationsController {
     @Autowired
     private DipendentiService dipendentiService;
     @Autowired
-    private AuthorizationsService authorizationsService;
+    private AuthenticationsService authenticationsService;
 
     @PostMapping("/login")
     public DipendenteLoginRespDTO login(@RequestBody DipendenteLoginDTO payload) {
-        return new DipendenteLoginRespDTO(this.authorizationsService.checkCredentialsAndGenerateToken(payload));
+        return new DipendenteLoginRespDTO(this.authenticationsService.checkCredentialsAndGenerateToken(payload));
     }
 
     // 2. POST http://localhost:3001/users (+req.body)
