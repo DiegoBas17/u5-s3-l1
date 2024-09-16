@@ -71,4 +71,8 @@ public class DipendentiService {
         dipendentiRepository.save(dipendente);
         return dipendente;
     }
+
+    public Dipendente findByEmail(String email) {
+        return dipendentiRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("Il dipendente con l'email " + email + " non è stato trovato!"));
+    }
 }
