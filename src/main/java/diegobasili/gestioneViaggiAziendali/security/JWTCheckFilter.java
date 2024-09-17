@@ -1,21 +1,29 @@
 package diegobasili.gestioneViaggiAziendali.security;
 
+import diegobasili.gestioneViaggiAziendali.entities.Dipendente;
 import diegobasili.gestioneViaggiAziendali.exceptions.UnauthorizedException;
+import diegobasili.gestioneViaggiAziendali.services.DipendentiService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 @Component
 public class JWTCheckFilter extends OncePerRequestFilter {
     @Autowired
     private JWTTools jwtTools;
+    @Autowired
+    private DipendentiService dipendentiService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -34,8 +42,21 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         System.out.println("ACCESS TOKEN " + accessToken);
         // 3. Verifichiamo se il token è stato manipolato (verifichiamo la signature) e se è scaduto (verifica dell'Expiration Date)
         jwtTools.verifyToken(accessToken);
+        // Se voglio abilitare l'AUTORIZZAZIONE devo 'informare' Spring Security su chi sia l'utente che sta effettuando la richiesta, in modo
+        // tale che possa controllarne il ruolo
 
         // 4. Se è tutto ok andiamo avanti (il che potrebbe voler dire o andare al prossimo filtro oppure al controller)
+        // 4.1 Cerco l'utente tramite id (l'id sta nel token)
+        String id = jwtTools.extractIdFromToken(accessToken);
+        Dipendente currentDipendente = this.dipendentiService.findById(UUID.fromString(id));
+
+        // 4.2 Trovato l'utente posso associarlo al Security Context, praticamente è come associare l'utente autenticato alla richiesta corrente
+        Authentication authentication = new UsernamePasswordAuthenticationToken(currentDipendente, null, currentDipendente.getAuthorities());
+        // Il terzo parametro è quello che ci serve per poter utilizzare i vari @PreAuthorize perché esso ritorna la lista dei ruoli dell'utente corrente
+        // e quindi Spring Security potrà effettuare un controllo sui ruoli quando ha bisogno
+        SecurityContextHolder.getContext().setAuthentication(authentication); // <-- Associo l'utente autenticato (Autentication) al Context
+
+        // 4.3 Andiamo avanti
         filterChain.doFilter(request, response);
 
         // 5. Se il token non è ok --> 401
@@ -50,6 +71,6 @@ public class JWTCheckFilter extends OncePerRequestFilter {
         // Se gli endpoint di Login e Register si trovano nello stesso controller avranno lo stesso URL di base "http://localhost:3001/auth/**"
 
         // Posso quindi escludere dal controllo del filtro tutte le richieste verso gli endpoint che contengono /auth nell'URL
-        return new AntPathMatcher().match("/auth/**", request.getServletPath());
+        return new AntPathMatcher().match("/authorizations/**", request.getServletPath());
     }
 }

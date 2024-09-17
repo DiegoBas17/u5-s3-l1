@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,6 +25,8 @@ public class DipendentiService {
     private DipendentiRepository dipendentiRepository;
     @Autowired
     private Cloudinary cloudinary;
+    @Autowired
+    private PasswordEncoder bcrypt;
 
     public Page<Dipendente> findAll(int page, int size, String sortBy) {
         if (page>20) page=20;
@@ -37,7 +40,7 @@ public class DipendentiService {
         }else if (this.dipendentiRepository.existsByEmail(body.email())) {
             throw new BadRequestException("L'email " + body.email() + " è già in uso!");
         } else {
-            Dipendente dipendente = new Dipendente(body.username(), body.nome(), body.cognome(), body.email(), "https://ui-avatars.com/api/?name="+body.nome()+"+"+body.cognome());
+            Dipendente dipendente = new Dipendente(body.username(), body.nome(), body.cognome(), body.email(), "https://ui-avatars.com/api/?name="+body.nome()+"+"+body.cognome(), bcrypt.encode(body.password()));
             return this.dipendentiRepository.save(dipendente);
         }
     }
@@ -55,6 +58,7 @@ public class DipendentiService {
             found.setNome(updateBody.nome());
             found.setCognome(updateBody.cognome());
             found.setEmail(updateBody.email());
+            found.setPassword(updateBody.password());
             return found;
         }
     }

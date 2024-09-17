@@ -9,6 +9,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +27,7 @@ public class DipendentiController {
     private DipendentiService dipendentiService;
 
     @GetMapping
+    //@PreAuthorize("hasAuthority('ADMIN')") // Solo gli admin possono leggere l'elenco degli utenti
     public Page<Dipendente> findAll(@RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "10") int size,
                                     @RequestParam(defaultValue = "id") String sortBy){
@@ -50,6 +53,7 @@ public class DipendentiController {
     }
 
     @PutMapping("/{dipendenteId}")
+    @PreAuthorize("hasAuthority('ADMIN')") // Solo gli admin possono modificare gli utenti
     public Dipendente findByIdAndUpdate(@PathVariable UUID dipendenteId, @RequestBody @Validated DipendenteDTO body, BindingResult validationResult){
         if (validationResult.hasErrors()) {
             String messages = validationResult.getAllErrors().stream()
@@ -63,6 +67,7 @@ public class DipendentiController {
 
     @DeleteMapping("/{dipendenteId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('ADMIN')") // Solo gli admin possono cancellare altri utenti
     public void findByIdAndDelete(@PathVariable UUID dipendenteId){
         this.dipendentiService.findByIdAndDelete(dipendenteId);
     }
@@ -71,4 +76,22 @@ public class DipendentiController {
     public Dipendente uploadAvatar(@PathVariable UUID dipendenteId, @RequestParam("avatar") MultipartFile image) throws IOException {
         return this.dipendentiService.uploadImage(dipendenteId, image);
     }
+
+    @GetMapping("/me")
+    public Dipendente getProfile(@AuthenticationPrincipal Dipendente currentAuthenticatedUser) {
+        // Tramite @AuthenticationPrincipal posso accedere ai dati dell'utente che sta effettuando la richiesta
+        return currentAuthenticatedUser;
+    }
+
+    @PutMapping("/me")
+    public Dipendente updateProfile(@AuthenticationPrincipal Dipendente currentAuthenticatedUser, @RequestBody DipendenteDTO body) {
+        return this.dipendentiService.findByIdAndUpdate(currentAuthenticatedUser.getId(), body);
+    }
+
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProfile(@AuthenticationPrincipal Dipendente currentAuthenticatedUser) {
+        this.dipendentiService.findByIdAndDelete(currentAuthenticatedUser.getId());
+    }
+
 }

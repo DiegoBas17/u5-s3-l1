@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("authorizations")
+@RequestMapping("/authorizations")
 public class AuthenticationsController {
     @Autowired
     private DipendentiService dipendentiService;
@@ -28,7 +28,6 @@ public class AuthenticationsController {
         return new DipendenteLoginRespDTO(this.authenticationsService.checkCredentialsAndGenerateToken(payload));
     }
 
-    // 2. POST http://localhost:3001/users (+req.body)
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
     public DipendenteRespDTO save(@RequestBody @Validated DipendenteDTO body, BindingResult validationResult) {
