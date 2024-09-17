@@ -1,6 +1,7 @@
 package diegobasili.gestioneViaggiAziendali.exceptions;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -20,6 +21,12 @@ public class ExceptionHandler {
     @ResponseStatus(HttpStatus.NOT_FOUND) // 404
     public ErrorsPayload handleNotFound(NotFoundException ex){
         return new ErrorsPayload(ex.getMessage(), LocalDateTime.now());
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(AuthorizationDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN) // 403
+    public ErrorsPayload handleForbidden(AuthorizationDeniedException ex) {
+        return new ErrorsPayload("Non hai i permessi per accedere", LocalDateTime.now());
     }
 
     @org.springframework.web.bind.annotation.ExceptionHandler(Exception.class)
